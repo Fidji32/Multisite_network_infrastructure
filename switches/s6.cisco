@@ -1,0 +1,44 @@
+!
+enable
+configure terminal
+!
+vlan 10
+  name Serveur
+exit
+!
+vlan 20
+  name RESPONSABLE
+exit
+!
+vlan 30
+  name EMPLOYE
+exit
+!
+vlan 60
+  name WIFI
+exit
+!
+interface range FastEthernet0/1-2
+  switchport trunk encapsulation dot1q
+  switchport mode trunk  
+!
+interface range FastEthernet0/3-13
+  switchport mode access
+  switchport access vlan 20
+exit
+!
+interface range FastEthernet0/14-46
+  switchport mode access
+  switchport access vlan 30
+exit
+!
+interface range FastEthernet0/47
+  switchport mode access
+  switchport access vlan 60
+exit
+!
+interface range FastEthernet0/48
+  switchport mode access
+  switchport access vlan 10
+exit
+!

@@ -1,0 +1,89 @@
+!
+enable
+config terminal
+!
+hostname r2
+!
+ipv6 unicast-routing
+!
+crypto isakmp enable
+!
+crypto isakmp policy 2
+ encryption aes
+ authentication pre-share
+ hash sha
+ group 2
+ lifetime 86400
+exit
+!
+crypto isakmp key info address 1.0.0.1
+!
+crypto ipsec transform-set set esp-aes esp-sha-hmac
+exit
+!
+crypto ipsec security-association lifetime seconds 86400
+!
+access-list 104 permit ip any any
+!
+ipv6 access-list acl6
+ permit ipv6 any any
+exit
+!
+crypto map map 2 ipsec-isakmp
+ set peer 1.0.0.1
+ set transform-set set
+ match address 104
+exit
+!
+! To switch right
+interface GigabitEthernet0/0
+ no shutdown
+exit
+!
+! Chef
+interface GigabitEthernet0/0.20
+ encapsulation dot1q 20
+ ip address 192.168.2.1 255.255.255.128
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address 2000:0:0:20::1/64
+ ipv6 ospf 2 area 2
+ ip helper-address 1.0.0.1
+exit
+!
+! Employee
+interface GigabitEthernet0/0.30
+ encapsulation dot1q 30
+ ip address 192.168.2.129 255.255.255.128
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address 2000:0:0:21::1/64
+ ipv6 ospf 2 area 2
+ ip helper-address 1.0.0.1
+exit
+!
+! To r0
+interface GigabitEthernet0/1
+ no shutdown
+ ip address 1.0.0.2 255.255.255.252
+ ipv6 enable
+ ipv6 address 2000:0:0:100::2/64
+ crypto map map
+exit
+!
+router bgp 2
+ bgp log-neighbor-changes
+ address-family ipv4
+  neighbor 1.0.0.1 remote-as 1
+  neighbor 1.0.0.1 activate
+ exit-address-family
+ address-family ipv6
+  neighbor 2000:0:0:100::1 remote-as 1
+  neighbor 2000:0:0:100::1 activate
+ exit-address-family
+ redistribute connected
+exit
+!
+exit
+exit
+!

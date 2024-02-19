@@ -1,0 +1,139 @@
+!
+enable
+configure terminal
+!
+hostname r0
+!
+ipv6 unicast-routing
+!
+crypto isakmp enable
+!
+crypto isakmp policy 2
+ encryption aes
+ authentication pre-share
+ hash sha
+ group 2
+ lifetime 86400
+exit
+!
+crypto isakmp key info address 1.0.0.2
+!
+crypto ipsec transform-set set esp-aes esp-sha-hmac
+exit
+!
+crypto ipsec security-association lifetime seconds 86400
+!
+access-list 104 permit ip any any
+!
+ipv6 access-list acl6
+ permit ipv6 any any
+exit
+!
+crypto map map 2 ipsec-isakmp
+ set peer 1.0.0.2
+ set transform-set set
+ match address 104
+exit
+!
+! To r3
+interface GigabitEthernet0/0
+ no shutdown
+ ip address 10.0.10.1 255.255.255.252
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address fd00:10::1/64
+ ipv6 ospf 2 area 2
+ ip helper-address 192.168.3.2
+
+exit
+!
+! To r2
+interface GigabitEthernet0/1
+ no shutdown
+ ip address 1.0.0.1 255.255.255.252
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address 2000:0:0:100::1/64
+ ipv6 ospf 2 area 2
+ crypto map map
+ ip helper-address 192.168.3.2
+exit
+!
+! To s6
+interface GigabitEthernet0/2
+ no shutdown
+exit
+!
+! Serveur
+interface GigabitEthernet0/2.10
+ encapsulation dot1q 10
+ ip address 192.168.3.1 255.255.255.252
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address 2000:0:0:30::1/64
+ ipv6 ospf 2 area 2
+exit
+!
+! Chef
+interface GigabitEthernet0/2.20
+ encapsulation dot1q 20
+ ip address 192.168.0.1 255.255.255.128
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address 2000:0:0:00::1/64
+ ipv6 ospf 2 area 2
+ ip helper-address 192.168.3.2
+exit
+!
+! Employee
+interface GigabitEthernet0/2.30
+ encapsulation dot1q 30
+ ip address 192.168.0.129 255.255.255.128
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address 2000:0:0:01::1/64
+ ipv6 ospf 2 area 2
+ ip helper-address 192.168.3.2
+exit
+!
+! Wifi
+interface GigabitEthernet0/2.60
+ encapsulation dot1q 60
+ ip address 192.168.6.1 255.255.255.252
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address 2000:0:0:60::1/64
+ ipv6 ospf 2 area 2
+exit
+!
+! MPLS
+interface Loopback0
+ ip address 10.10.10.10 255.255.255.255
+ ip ospf 2 area 2
+exit
+!
+router bgp 1
+ bgp log-neighbor-changes
+ address-family ipv4
+  neighbor 1.0.0.2 remote-as 2
+  neighbor 1.0.0.2 activate
+ exit-address-family
+ address-family ipv6
+  neighbor 2000:0:0:100::2 remote-as 2
+  neighbor 2000:0:0:100::2 activate
+ exit-address-family
+ redistribute connected
+ redistribute ospf 2
+exit
+!
+router ospf 2
+ redistribute bgp 1 subnets
+exit
+!
+ipv6 router ospf 2
+ router-id 2.2.2.10
+exit
+!
+exit
+exit
+!

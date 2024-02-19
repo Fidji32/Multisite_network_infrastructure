@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockchain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blockchain
+  template:
+    metadata:
+      labels:
+        app: blockchain
+    spec:
+      containers:
+      - name: geth
+        image: ethereum/client-go:stable
+        ports:
+        - containerPort: 8545
+          protocol: TCP
+        - containerPort: 8546
+          protocol: TCP
+        - containerPort: 8547
+          protocol: TCP
+        - containerPort: 30303
+      - name: lighthouse
+        image: sigp/lighthouse:latest-modern
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+        - containerPort: 9000
+          protocol: UDP
+        - containerPort: 5052
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blockchain
+spec:
+  selector:
+    app: blockchain
+  ports:
+    - name: geth-1
+      port: 8545
+    - name: geth-2
+      port: 8546
+    - name: geth-3
+      port: 8547
+    - name: geth-p2p
+      port: 30303
+    - name: lighthouse-p2p
+      port: 9000
+    - name: lighthouse-admin
+      port: 5052
+  type: LoadBalancer
+status:
+  loadBalancer: {}

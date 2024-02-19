@@ -1,0 +1,35 @@
+!
+enable
+configure terminal
+!
+hostname r7
+!
+ipv6 unicast-routing
+!
+! To s6
+interface FastEthernet0/0
+ no shutdown
+ ip address 192.168.3.2 255.255.255.252
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address 2000:0:0:30::2/64
+ ipv6 ospf 2 area 2
+ ip helper-address 192.168.4.2
+exit
+!
+! To s10
+interface FastEthernet0/1
+ no shutdown
+ ip address 192.168.4.1 255.255.255.240
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address 2000:0:0:40::1/64
+ ipv6 ospf 2 area 2
+exit
+!
+ipv6 router ospf 2
+ router-id 2.2.2.7
+exit
+!
+exit
+exit

@@ -1,0 +1,26 @@
+!
+enable
+configure terminal
+!
+vlan 40
+  name TOR6
+exit
+!
+vlan 50
+  name TOR4
+exit
+!
+interface range FastEthernet0/1
+  switchport trunk encapsulation dot1q
+  switchport mode trunk  
+!
+interface range FastEthernet0/2
+  switchport mode access
+  switchport access vlan 40
+exit
+!
+interface range FastEthernet0/3
+  switchport mode access
+  switchport access vlan 50
+exit
+!

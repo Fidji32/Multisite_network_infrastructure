@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dns
+data:
+  named.conf: |
+    options {
+      directory "/var/cache/bind";
+    };
+    zone "t21.org." {
+      type master;
+      file "/var/lib/bind/t21.org.zone";
+      allow-update { 192.168.4.2; };
+    };
+  t21.org.zone: |
+    $ORIGIN t21.org.
+    $TTL 86400
+    @       IN      SOA     server.t21.org. postmaster.t21.org. (
+                            2024010101      ; Serial
+                            10800           ; Refresh ( 3h in s )
+                            3600            ; Retry ( 1h in s )
+                            3600000         ; Expire ( 1000h in s )
+                            86400           ; Minimum TTL ( 1d in s )
+    )
+
+    @       IN      NS      server.t21.org.
+
+    @       IN      A       192.168.4.2
+    server  IN      A       192.168.4.2
+
+    srv     IN      CNAME   server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dns
+  template:
+    metadata:
+      labels:
+        app: dns
+    spec:
+      containers:
+      - name: bind9
+        image: internetsystemsconsortium/bind9:9.18
+        volumeMounts:
+        - name: dns
+          mountPath: /etc/bind
+        - name: dns-zones
+          mountPath: /var/lib/bind
+        ports:
+        - containerPort: 53
+          protocol: UDP
+        - containerPort: 53
+          protocol: TCP
+        - containerPort: 953
+      volumes:
+      - name: dns
+        configMap:
+          name: dns
+          items:
+          - key: named.conf
+            path: named.conf
+      - name: dns-zones
+        configMap:
+          name: dns
+          items:
+          - key: t21.org.zone
+            path: t21.org.zone
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns
+spec:
+  selector:
+    app: dns
+  ports:
+    - name: dns
+      port: 53
+    - name: dns-control
+      port: 953
+  type: LoadBalancer
+status:
+  loadBalancer: {}

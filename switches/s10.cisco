@@ -1,0 +1,15 @@
+!
+enable
+configure terminal
+!
+vlan 101
+  name HYPERVISEUR
+exit
+!
+vlan 100
+  name WIPHILOU
+exit
+!
+interface range GigabitEthernet0/1/0
+  switchport mode trunk  
+!

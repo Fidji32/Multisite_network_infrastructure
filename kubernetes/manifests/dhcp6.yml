@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dhcp6
+data:
+  kea-dhcp6.conf: |
+    {
+      "Dhcp6": {
+        "interfaces-config": {
+          "interfaces": ["eth0"]
+        },
+        "option-data": [
+          {
+            "name": "dns-servers",
+            "data": "2000:0:0:30::2"
+          }
+        ]
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dhcp6
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: dhcp6
+  template:
+    metadata:
+      labels:
+        app: dhcp6
+    spec:
+      containers:
+      - name: kea-dhcp6
+        image: docker.cloudsmith.io/isc/docker/kea-dhcp6:2.5.2
+        volumeMounts:
+        - name: dhcp6
+          mountPath: /etc/kea
+        ports:
+        - containerPort: 547 # DHCPv6
+          protocol: UDP
+      volumes:
+      - name: dhcp6
+        configMap:
+          name: dhcp6
+          items:
+          - key: kea-dhcp6.conf
+            path: kea-dhcp6.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dhcp6
+spec:
+  selector:
+    app: dhcp6
+  ports:
+    - name: dhcp6
+      protocol: UDP
+      port: 547
+  type: LoadBalancer
+status:
+  loadBalancer: {}

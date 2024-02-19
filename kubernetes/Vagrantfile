@@ -1,0 +1,71 @@
+Vagrant.configure("2") do |config|
+  config.vm.provider :libvirt do |lv|
+    lv.cpus = "2"
+    lv.memory = "2048"
+    lv.forward_ssh_port = true
+  end
+
+  # Define box
+  config.vm.box = "debian/bookworm64" # Debian 12 (2023 version)
+  config.vm.box_version = "12.20231009.1" # Pin to a specific version
+
+  # Install docker
+  config.vm.provision "docker"
+
+  # Install basic tools
+  config.vm.provision :shell, path: "base-provision.sh"
+
+  # Install k3s
+  # config.vm.provision :shell, path: "k3sInstall.sh"
+  # Install kubernetes
+  # config.vm.provision :shell, path: "kubeInstall.sh"
+
+  config.vm.define "master" do |m|
+    m.vm.hostname = "master"
+    # Kubernetes ports
+    m.vm.network :forwarded_port, guest: 6443, host: 6443, host_ip: "0.0.0.0"
+    m.vm.network :forwarded_port, guest: 2379, host: 2379, host_ip: "0.0.0.0"
+    m.vm.network :forwarded_port, guest: 2380, host: 2380, host_ip: "0.0.0.0"
+    m.vm.network :forwarded_port, guest: 10250, host: 10250, host_ip: "0.0.0.0"
+    m.vm.network :forwarded_port, guest: 10257, host: 10257, host_ip: "0.0.0.0"
+    m.vm.network :forwarded_port, guest: 10259, host: 10259, host_ip: "0.0.0.0"
+    # Generic ports
+    # m.vm.network :forwarded_port, guest: 80, host: 80, host_ip: "0.0.0.0" # HTTP
+    # m.vm.network :forwarded_port, guest: 443, host: 443, host_ip: "0.0.0.0" # HTTPS
+    # m.vm.network :forwarded_port, guest: 8080, host: 8080, host_ip: "0.0.0.0" # HTTP alias
+    # Networks
+    # m.vm.network :private_network, ip: "192.168.10.5"
+    # m.vm.network :public_network,
+    #   :dev => "brVagrant",
+    #   :mode => "bridge",
+    #   :type => "bridge"
+  end
+
+  config.vm.define "worker0" do |w0|
+    w0.vm.hostname = "worker"
+    # Kubernetes ports
+    w0.vm.network :forwarded_port, guest: 10250, host: 10250, host_ip: "0.0.0.0"
+    # Kubernetes services ports
+    w0.vm.network :forwarded_port, guest: 30000, host: 30000, host_ip: "0.0.0.0" # Extra
+    w0.vm.network :forwarded_port, guest: 30020, host: 30020, host_ip: "0.0.0.0" # FTP
+    w0.vm.network :forwarded_port, guest: 30021, host: 30021, host_ip: "0.0.0.0" # FTP
+    w0.vm.network :forwarded_port, guest: 30053, host: 30053, host_ip: "0.0.0.0" # DNS
+    w0.vm.network :forwarded_port, guest: 30067, host: 30067, host_ip: "0.0.0.0" # DHCP
+    w0.vm.network :forwarded_port, guest: 30068, host: 30068, host_ip: "0.0.0.0" # DHCP
+    w0.vm.network :forwarded_port, guest: 30080, host: 30080, host_ip: "0.0.0.0" # HTTP
+    w0.vm.network :forwarded_port, guest: 30137, host: 30137, host_ip: "0.0.0.0" # SMB
+    w0.vm.network :forwarded_port, guest: 30138, host: 30138, host_ip: "0.0.0.0" # SMB
+    w0.vm.network :forwarded_port, guest: 30139, host: 30139, host_ip: "0.0.0.0" # SMB
+    w0.vm.network :forwarded_port, guest: 30443, host: 30443, host_ip: "0.0.0.0" # HTTPS
+    # Generic ports
+    # w0.vm.network :forwarded_port, guest: 80, host: 80, host_ip: "0.0.0.0" # HTTP
+    # w0.vm.network :forwarded_port, guest: 443, host: 443, host_ip: "0.0.0.0" # HTTPS
+    # w0.vm.network :forwarded_port, guest: 8080, host: 8080, host_ip: "0.0.0.0" # HTTP alias
+    # Networks
+    # w0.vm.network :private_network, ip: "192.168.10.10"
+    # w0.vm.network :public_network,
+    #   :dev => "brVagrant",
+    #   :mode => "bridge",
+    #   :type => "bridge"
+  end
+end

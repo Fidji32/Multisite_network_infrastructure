@@ -1,0 +1,58 @@
+!
+enable
+config terminal
+!
+hostname r5
+!
+ipv6 unicast-routing
+!
+! To r4
+interface GigabitEthernet0/0
+ no shutdown
+ ip address 10.0.60.1 255.255.255.252
+ ip ospf 1 area 0
+ ipv6 enable
+ ipv6 address fd00:60::1/64
+ ipv6 ospf 1 area 0
+exit
+!
+! To r6
+interface GigabitEthernet0/1
+ no shutdown
+ ip address 10.0.30.1 255.255.255.252
+ ip ospf 1 area 0
+ ipv6 enable
+ ipv6 address fd00:30::1/64
+ ipv6 ospf 1 area 0
+exit
+!
+! To r3
+interface GigabitEthernet0/2
+ no shutdown
+ ip address 10.0.20.1 255.255.255.252
+ ip ospf 1 area 0
+ ipv6 enable
+ ipv6 address fd00:20::1/64
+ ipv6 ospf 1 area 0
+exit
+!
+! MPLS
+interface Loopback0
+ ip address 5.5.5.5 255.255.255.255
+ ip ospf 1 area 0
+exit
+!
+router ospf 1
+ network 10.0.20.0 0.0.0.3 area 0
+ network 10.0.30.0 0.0.0.3 area 0
+ network 10.0.60.0 0.0.0.3 area 0
+ mpls ldp autoconfig
+exit
+!
+ipv6 router ospf 1
+ router-id 1.1.1.5
+exit
+!
+exit
+exit
+!

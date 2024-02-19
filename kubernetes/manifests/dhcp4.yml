@@ -1,0 +1,172 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dhcp4
+data:
+  kea-dhcp4.conf: |
+    {
+      "Dhcp4": {
+        "interfaces-config": {
+          "interfaces": ["eth0"]
+        },
+        "valid-lifetime": 60,
+        "renew-timer": 30,
+        "rebind-timer": 52,
+        "subnet4": [
+          {
+            "id": 100,
+            "user-context": {"comment": "Responsables site principal"},
+            "subnet": "192.168.0.0/25",
+            "pools": [
+              { "pool": "192.168.0.3 - 192.168.0.126" }
+            ],
+            "option-data": [
+              {
+                "name": "routers",
+                "data": "192.168.0.1"
+              },
+              {
+                "name": "domain-name-servers",
+                "data": "192.168.4.2"
+              }
+            ]
+          },
+          {
+            "id": 101,
+            "user-context": {"comment": "Employés site principal"},
+            "subnet": "192.168.0.128/25",
+            "pools": [
+              { "pool": "192.168.0.131 - 192.168.0.254" }
+            ],
+            "option-data": [
+              {
+                "name": "routers",
+                "data": "192.168.0.129"
+              },
+              {
+                "name": "domain-name-servers",
+                "data": "192.168.4.2"
+              }
+            ]
+          },
+          {
+            "id": 110,
+            "user-context": {"comment": "Responsables site 1"},
+            "subnet": "192.168.1.0/25",
+            "pools": [
+              { "pool": "192.168.1.3 - 192.168.1.126" }
+            ],
+            "option-data": [
+              {
+                "name": "routers",
+                "data": "192.168.1.1"
+              },
+              {
+                "name": "domain-name-servers",
+                "data": "192.168.4.2"
+              }
+            ]
+          },
+          {
+            "id": 111,
+            "user-context": {"comment": "Employés site 1"},
+            "subnet": "192.168.1.128/25",
+            "pools": [
+              { "pool": "192.168.1.131 - 192.168.1.254" }
+            ],
+            "option-data": [
+              {
+                "name": "routers",
+                "data": "192.168.1.129"
+              },
+              {
+                "name": "domain-name-servers",
+                "data": "192.168.4.2"
+              }
+            ]
+          },
+          {
+            "id": 120,
+            "user-context": {"comment": "Responsables site 2"},
+            "subnet": "192.168.2.0/25",
+            "pools": [
+              { "pool": "192.168.2.3 - 192.168.2.126" }
+            ],
+            "option-data": [
+              {
+                "name": "routers",
+                "data": "192.168.2.1"
+              },
+              {
+                "name": "domain-name-servers",
+                "data": "192.168.4.2"
+              }
+            ]
+          },
+          {
+            "id": 121,
+            "user-context": {"comment": "Employés site 2"},
+            "subnet": "192.168.2.128/25",
+            "pools": [
+              { "pool": "192.168.2.131 - 192.168.2.254" }
+            ],
+            "option-data": [
+              {
+                "name": "routers",
+                "data": "192.168.2.129"
+              },
+              {
+                "name": "domain-name-servers",
+                "data": "192.168.4.2"
+              }
+            ]
+          }
+        ]
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dhcp4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dhcp4
+  template:
+    metadata:
+      labels:
+        app: dhcp4
+    spec:
+      containers:
+      - name: kea-dhcp4
+        image: docker.cloudsmith.io/isc/docker/kea-dhcp4:2.5.2
+        volumeMounts:
+        - name: dhcp4
+          mountPath: /etc/kea
+        ports:
+        - containerPort: 67 # DHCPv4
+          protocol: UDP
+      volumes:
+      - name: dhcp4
+        configMap:
+          name: dhcp4
+          items:
+          - key: kea-dhcp4.conf
+            path: kea-dhcp4.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dhcp4
+spec:
+  selector:
+    app: dhcp4
+  ports:
+    - name: dhcp4
+      protocol: UDP
+      port: 67
+  type: LoadBalancer
+status:
+  loadBalancer: {}

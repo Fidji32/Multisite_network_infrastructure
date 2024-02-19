@@ -1,0 +1,81 @@
+!
+enable
+config terminal
+!
+hostname r4
+!
+ipv6 unicast-routing
+!
+ip vrf MY-VRF
+ rd 65400:1
+ route-target both 64500:1
+exit
+!
+! To r1
+interface GigabitEthernet0/0
+ ip vrf forwarding MY-VRF
+ ip address 10.0.70.2 255.255.255.252
+ ip ospf 2 area 2
+ ipv6 enable
+ ipv6 address fd00:70::2/64
+ ipv6 ospf 2 area 2
+ no shutdown
+exit
+!
+! To s9
+interface GigabitEthernet0/1
+ ip address 10.0.50.1 255.255.255.252
+ ip ospf 1 area 0
+ ipv6 enable
+ ipv6 address fd00:50::1/64
+ ipv6 ospf 1 area 0
+ no shutdown
+exit
+!
+! To r5
+interface GigabitEthernet0/2
+ ip address 10.0.60.2 255.255.255.252
+ ip ospf 1 area 0
+ ipv6 enable
+ ipv6 address fd00:60::2/64
+ ipv6 ospf 1 area 0
+ no shutdown
+exit
+!
+! MPLS
+interface Loopback0
+ ip address 4.4.4.4 255.255.255.255
+ ip ospf 1 area 0
+exit
+!
+router ospf 1
+ network 10.0.50.0 0.0.0.3 area 0
+ network 10.0.60.0 0.0.0.3 area 0
+ mpls ldp autoconfig
+exit
+!
+router bgp 65400
+ neighbor 3.3.3.3 remote-as 65400
+ neighbor 3.3.3.3 update-source loopback 0
+ no auto-summary
+ address-family vpnv4
+  neighbor 3.3.3.3 activate
+ address-family ipv4 vrf MY-VRF
+  redistribute ospf 2
+exit
+!
+router ospf 2 vrf MY-VRF
+ redistribute bgp 65400 subnets
+exit
+!
+ipv6 router ospf 1
+ router-id 1.1.1.4
+exit
+!
+ipv6 router ospf 2
+ router-id 2.2.2.4
+exit
+!
+exit
+exit
+!
